@@ -46,19 +46,21 @@ test('Preflight finds the issues in a post', () => {
   assert.ok(codes.includes('reference-not-cited')); // Lee, 2019
 });
 
-test('posts are listed with their status and read with rich content', async () => {
+test('published posts are listed and read with rich content', async () => {
   const calls = [];
+  const query = {
+    descending: (f) => (calls.push(['sort', f]), query),
+    limit: (n) => (calls.push(['limit', n]), query),
+    find: async () => ({ items: [{ _id: 'a', title: 'Essay tips' }, { _id: 'b', title: ' ' }, { title: 'No id' }] }),
+  };
   const api = {
-    listDraftPosts: async (opts) => {
-      calls.push(['list', opts]);
-      return { draftPosts: [{ _id: 'a', title: 'Essay tips', status: 'PUBLISHED' }, { _id: 'b', title: ' ', status: 'UNPUBLISHED' }] };
-    },
-    getDraftPost: async (id, opts) => {
+    queryPosts: () => query,
+    getPost: async (id, opts) => {
       calls.push(['get', id, opts]);
-      return { draftPost: { _id: id, richContent: POST } };
+      return { post: { _id: id, richContent: POST } };
     },
   };
-  assert.deepEqual(await listPosts(api), [{ id: 'a', label: 'Essay tips (Published)' }, { id: 'b', label: 'Untitled post (Draft)' }]);
+  assert.deepEqual(await listPosts(api), [{ id: 'a', label: 'Essay tips' }, { id: 'b', label: 'Untitled post' }]);
   assert.match(await readPost('a', api), /^# Introduction/);
-  assert.deepEqual(calls, [['list', { paging: { limit: 100 } }], ['get', 'a', { fieldsets: ['RICH_CONTENT'] }]]);
+  assert.deepEqual(calls, [['sort', 'firstPublishedDate'], ['limit', 100], ['get', 'a', { fieldsets: ['RICH_CONTENT'] }]]);
 });

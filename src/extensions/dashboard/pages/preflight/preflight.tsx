@@ -128,7 +128,7 @@ const PreflightPage: FC = () => {
   const postPicker = posts === null ? (
     <Loader size="tiny" />
   ) : posts.length === 0 ? (
-    <Text size="small" secondary>No blog posts yet. Add Wix Blog to your site, or use Pasted text.</Text>
+    <Text size="small" secondary>No published blog posts yet. Publish a post, or paste a draft into Pasted text.</Text>
   ) : (
     <Dropdown
       options={posts.map((p) => ({ id: p.id, value: p.label }))}

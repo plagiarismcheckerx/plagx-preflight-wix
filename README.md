@@ -2,9 +2,9 @@
 
 *A free academic writing tool by Plagiarism Checker X.*
 
-**Plagx Draft Preflight is a free, open-source draft checker app for the Wix dashboard.** Pick a blog post (draft or published) or paste any text, and check it for word count and reading time, in-text citations against the reference list, punctuation and basic grammar before you publish. Use it as an **essay checker**, **word count and reading time tool**, **citation checker** or **reference list checker** for blog posts, articles and academic pages.
+**Plagx Draft Preflight is a free, open-source draft checker app for the Wix dashboard.** Pick a published blog post or paste any text (for example a draft), and check it for word count and reading time, in-text citations against the reference list, punctuation and basic grammar before you publish. Use it as an **essay checker**, **word count and reading time tool**, **citation checker** or **reference list checker** for blog posts, articles and academic pages.
 
-- Checks blog posts, including unpublished drafts, or pasted text
+- Checks published blog posts, or pasted text such as a draft
 - Text is checked in your browser: nothing is stored, and nothing is sent to Plagiarism Checker X
 - Read-only: the app never changes your site
 - APA and MLA in-text citations
@@ -24,7 +24,7 @@ Need a quick citation online? Use the [free citation generator](https://plagiari
 2. In your site's dashboard, open **Apps → Plagx Draft Preflight**.
 3. Choose **Blog post** or **Pasted text**, set word limits and citation style if you need them, and click **Check draft**.
 
-Headings, paragraphs, list items and quotes are read in order. The references section is the first heading named References, Bibliography, Works Cited, Sources or similar; each paragraph or list item after it is one reference. To check a site page, copy its text into **Pasted text**.
+Headings, paragraphs, list items and quotes are read in order. The references section is the first heading named References, Bibliography, Works Cited, Sources or similar; each paragraph or list item after it is one reference. To check a draft or a site page, copy its text into **Pasted text**.
 
 ## Checks
 
@@ -37,7 +37,7 @@ Headings, paragraphs, list items and quotes are read in order. The references se
 
 ## Privacy and permissions
 
-- **Permission:** Read Draft Blog Posts (`SCOPE.DC-BLOG.READ-DRAFT-POSTS`). Nothing is written.
+- **Permission:** Read Blog (`SCOPE.DC-BLOG.READ-BLOGS`). Nothing is written.
 - **Data:** the selected post is read through the Wix Blog SDK in the site owner's browser and checked there. The app has no server of its own and stores nothing.
 
 ## Development
