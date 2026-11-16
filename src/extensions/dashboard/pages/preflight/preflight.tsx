@@ -1,11 +1,11 @@
 import { useEffect, useState, type FC } from 'react';
 import {
-  Badge, Box, Button, Card, Cell, Checkbox, Dropdown, FormField, InputArea, Layout, Loader,
+  AutoComplete, Badge, Box, Button, Card, Cell, Checkbox, Dropdown, FormField, InputArea, Layout, Loader,
   NumberInput, Page, RadioGroup, SectionHelper, Text, TextButton, WixDesignSystemProvider,
 } from '@wix/design-system';
 import '@wix/design-system/styles.global.css';
 import { checkDraft, type Result } from '../../../../lib/index.js';
-import { listPosts, readPost } from './blog.js';
+import { lastDraftError, listPosts, readPost } from './blog.js';
 
 type Source = 'post' | 'paste';
 type Style = 'apa' | 'mla';
@@ -76,8 +76,9 @@ const Results: FC<{ result: Result }> = ({ result }) => {
 
 const PreflightPage: FC = () => {
   const [source, setSource] = useState<Source>('post');
-  const [posts, setPosts] = useState<{ id: string; label: string }[] | null>(null);
+  const [posts, setPosts] = useState<{ id: string; kind: 'draft' | 'post'; label: string }[] | null>(null);
   const [postId, setPostId] = useState<string>('');
+  const [search, setSearch] = useState('');
   const [text, setText] = useState('');
   const [minWords, setMinWords] = useState<number | null>(null);
   const [maxWords, setMaxWords] = useState<number | null>(null);
@@ -91,7 +92,11 @@ const PreflightPage: FC = () => {
     listPosts()
       .then((items) => {
         setPosts(items);
-        if (items[0]) setPostId(items[0].id);
+        if (lastDraftError) setNotice({ text: `Drafts could not be loaded, so only published posts are listed: ${lastDraftError}` });
+        if (items[0]) {
+          setPostId(items[0].id);
+          setSearch(items[0].label);
+        }
       })
       .catch((err: Error) => {
         setPosts([]);
@@ -110,9 +115,9 @@ const PreflightPage: FC = () => {
       let draft = '';
       if (source === 'paste') draft = pasted(text);
       else if (!postId) {
-        setNotice({ text: 'Choose a blog post to check.' });
+        setNotice({ text: 'Choose a blog post from the list to check.' });
         return;
-      } else draft = await readPost(postId);
+      } else draft = await readPost(postId, posts?.find((p) => p.id === postId)?.kind ?? 'draft');
       if (!draft) {
         setNotice({ text: 'No text found to check.' });
         return;
@@ -128,12 +133,27 @@ const PreflightPage: FC = () => {
   const postPicker = posts === null ? (
     <Loader size="tiny" />
   ) : posts.length === 0 ? (
-    <Text size="small" secondary>No published blog posts yet. Publish a post, or paste a draft into Pasted text.</Text>
+    <Text size="small" secondary>No blog posts yet. Write a post in Wix Blog, or use Pasted text.</Text>
   ) : (
-    <Dropdown
+    <AutoComplete
       options={posts.map((p) => ({ id: p.id, value: p.label }))}
-      selectedId={postId}
-      onSelect={(option) => setPostId(String(option.id))}
+      value={search}
+      placeholder="Search or choose a post"
+      onChange={(e) => {
+        setSearch(e.target.value);
+        setPostId('');
+      }}
+      onSelect={(option) => {
+        setPostId(String(option.id));
+        setSearch(String(option.value));
+      }}
+      predicate={(option) => {
+        const typed = search.trim().toLowerCase();
+        // Show every post when nothing is typed or a post is already chosen.
+        if (!typed || postId) return true;
+        return String(option.value).toLowerCase().includes(typed);
+      }}
+      emptyStateMessage="No posts match your search."
     />
   );
 

@@ -46,21 +46,37 @@ test('Preflight finds the issues in a post', () => {
   assert.ok(codes.includes('reference-not-cited')); // Lee, 2019
 });
 
-test('published posts are listed and read with rich content', async () => {
-  const calls = [];
+const publishedApi = (items, calls = []) => {
   const query = {
     descending: (f) => (calls.push(['sort', f]), query),
     limit: (n) => (calls.push(['limit', n]), query),
-    find: async () => ({ items: [{ _id: 'a', title: 'Essay tips' }, { _id: 'b', title: ' ' }, { title: 'No id' }] }),
+    find: async () => ({ items }),
   };
+  return { queryPosts: () => query, getPost: async (id, opts) => (calls.push(['get', id, opts]), { post: { richContent: POST } }) };
+};
+
+test('drafts come from the endpoint; published posts not already listed are added', async () => {
+  const calls = [];
   const api = {
-    queryPosts: () => query,
-    getPost: async (id, opts) => {
-      calls.push(['get', id, opts]);
-      return { post: { _id: id, richContent: POST } };
+    drafts: {
+      list: async () => ({ posts: [{ id: 'a', title: 'Essay tips', status: 'PUBLISHED' }, { id: 'b', title: ' ', status: 'UNPUBLISHED' }, { title: 'No id' }] }),
+      get: async (id) => (calls.push(['getDraft', id]), { richContent: POST }),
     },
+    posts: publishedApi([{ _id: 'x', title: 'Essay tips' }, { _id: 'y', title: 'Live only' }], calls),
   };
-  assert.deepEqual(await listPosts(api), [{ id: 'a', label: 'Essay tips' }, { id: 'b', label: 'Untitled post' }]);
-  assert.match(await readPost('a', api), /^# Introduction/);
-  assert.deepEqual(calls, [['sort', 'firstPublishedDate'], ['limit', 100], ['get', 'a', { fieldsets: ['RICH_CONTENT'] }]]);
+  assert.deepEqual(await listPosts(api), [
+    { id: 'a', kind: 'draft', label: 'Essay tips (Published)' },
+    { id: 'b', kind: 'draft', label: 'Untitled post (Draft)' },
+    { id: 'y', kind: 'post', label: 'Live only (Published)' },
+  ]);
+  assert.match(await readPost('a', 'draft', api), /^# Introduction/);
+  assert.match(await readPost('y', 'post', api), /^# Introduction/);
+  assert.deepEqual(calls, [['sort', 'firstPublishedDate'], ['limit', 100], ['getDraft', 'a'], ['get', 'y', { fieldsets: ['RICH_CONTENT'] }]]);
+});
+
+test('an empty or failing drafts list still shows published posts', async () => {
+  const empty = { drafts: { list: async () => ({ posts: [] }) }, posts: publishedApi([{ _id: 'p', title: 'Live post' }]) };
+  assert.deepEqual(await listPosts(empty), [{ id: 'p', kind: 'post', label: 'Live post (Published)' }]);
+  const failing = { drafts: { list: async () => { throw new Error('Forbidden'); } }, posts: publishedApi([{ _id: 'p', title: 'Live post' }]) };
+  assert.deepEqual(await listPosts(failing), [{ id: 'p', kind: 'post', label: 'Live post (Published)' }]);
 });
